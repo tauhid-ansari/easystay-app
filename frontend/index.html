@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EasyStay - Find Your Room</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body { background: #eef2f6; display: flex; justify-content: center; }
+    .app-container { width: 100%; max-width: 430px; min-height: 100vh; background: #f8fafc; padding-bottom: 75px; }
+    .header { background: #2563eb; color: #fff; padding: 18px 16px 22px; border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .header h1 { font-size: 22px; }
+    .owner-btn { background: rgba(255,255,255,0.2); color: #fff; border: 1px solid #fff; padding: 5px 10px; border-radius: 16px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .owner-btn.active { background: #fef08a; color: #111; border-color: #fef08a; }
+    .header p { font-size: 13px; margin: 4px 0 12px; opacity: 0.9; }
+    .search-box input { width: 100%; padding: 10px 12px; border: none; border-radius: 8px; font-size: 14px; }
+    .filter-bar { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #475569; }
+    .filter-bar select { padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; }
+    .room-list { padding: 0 16px; display: flex; flex-direction: column; gap: 12px; }
+    .room-card { background: #fff; border-radius: 12px; padding: 14px; border: 1px solid #e2e8f0; }
+    .room-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+    .room-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+    .badge { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #dbeafe; color: #1e40af; font-weight: 700; }
+    .room-loc { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+    .room-video { width: 100%; max-height: 210px; border-radius: 8px; margin-bottom: 10px; background: #000; }
+    .amenities { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .amenity { font-size: 11px; background: #f1f5f9; color: #334155; padding: 4px 8px; border-radius: 6px; }
+    .room-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 10px; gap: 6px; flex-wrap: wrap; }
+    .price { font-size: 16px; font-weight: 700; color: #16a34a; }
+    .price span { font-size: 12px; font-weight: 400; color: #64748b; }
+    .card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    button { cursor: pointer; }
+    .save-btn { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 6px 9px; border-radius: 7px; font-size: 12px; font-weight: 600; }
+    .save-btn.saved { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
+    .edit-btn { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 6px 9px; border-radius: 7px; font-size: 12px; font-weight: 600; }
+    .delete-btn { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 6px 9px; border-radius: 7px; font-size: 12px; font-weight: 600; }
+    .contact-btn { background: #2563eb; color: #fff; border: none; padding: 6px 10px; border-radius: 7px; font-size: 12px; font-weight: 600; }
+    .form-section { padding: 16px; display: none; }
+    .form-card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; }
+    .form-card h2 { font-size: 18px; margin-bottom: 12px; }
+    .form-group { margin-bottom: 11px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #334155; }
+    .form-group input, .form-group select { width: 100%; padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; }
+    .preview-video { width: 100%; max-height: 170px; border-radius: 8px; margin-top: 8px; display: none; background: #000; }
+    .hint { font-size: 11px; color: #64748b; margin-top: 3px; }
+    .submit-btn { width: 100%; background: #2563eb; color: #fff; border: none; padding: 11px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .section-title { padding: 14px 16px 6px; font-size: 16px; font-weight: 700; display: none; }
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 430px; background: #fff; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; padding: 10px 0; }
+    .nav-item { font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; }
+    .nav-item.active { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="header" id="mainHeader">
+      <div class="header-top">
+        <h1>EasyStay</h1>
+        <button class="owner-btn" id="ownerToggleBtn" onclick="toggleOwnerMode()">Owner: OFF</button>
+      </div>
+      <p>Rooms for Students, Employees & Workers</p>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by location..." onkeyup="filterRooms()" />
+      </div>
+    </div>
+
+    <div class="filter-bar" id="filterBar">
+      <span id="resultCount">Loading rooms...</span>
+      <select id="budgetSelect" onchange="filterRooms()">
+        <option value="999999">Any Budget</option>
+        <option value="3000">Under ₹3,000</option>
+        <option value="6000">Under ₹6,000</option>
+        <option value="10000">Under ₹10,000</option>
+      </select>
+    </div>
+
+    <div class="section-title" id="savedTitle">Saved by Owner</div>
+    <div class="room-list" id="roomList"></div>
+
+    <div class="form-section" id="addRoomSection">
+      <div class="form-card">
+        <h2 id="formHeading">Add New Room</h2>
+        <form id="addRoomForm" onsubmit="saveRoomForm(event)">
+          <input type="hidden" id="editRoomId" />
+          <div class="form-group">
+            <label for="roomTitle">Room / PG Name</label>
+            <input type="text" id="roomTitle" required />
+          </div>
+          <div class="form-group">
+            <label for="roomCategory">Suitable For</label>
+            <select id="roomCategory" required>
+              <option value="Student">Student</option>
+              <option value="Employee">Employee</option>
+              <option value="Worker">Worker</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="roomLocation">Location</label>
+            <input type="text" id="roomLocation" required />
+          </div>
+          <div class="form-group">
+            <label for="roomRent">Monthly Rent (₹)</label>
+            <input type="number" id="roomRent" min="500" required />
+          </div>
+          <div class="form-group">
+            <label for="roomAmenities">Facilities (comma separated)</label>
+            <input type="text" id="roomAmenities" placeholder="Wi-Fi, Water, Bed" />
+          </div>
+          <div class="form-group">
+            <label for="roomVideo">Short Room Video</label>
+            <input type="file" id="roomVideo" accept="video/*" onchange="previewSelectedVideo()" />
+            <video id="videoPreview" class="preview-video" controls playsinline></video>
+            <div class="hint">Video upload karne par server par save hoga aur card mein dikhega.</div>
+          </div>
+          <div class="form-group">
+            <label for="roomOwner">Owner Name & Phone</label>
+            <input type="text" id="roomOwner" required />
+          </div>
+          <div class="form-group" id="secretKeyGroup">
+            <label for="ownerSecretKey">Owner Secret Key</label>
+            <input type="password" id="ownerSecretKey" placeholder="e.g. mykey123" />
+            <div class="hint">Sirf aapke rooms edit/delete karne ke liye.</div>
+          </div>
+          <button type="submit" class="submit-btn" id="submitBtn">Save Room</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item active" id="navHome" onclick="switchTab('home')">Home</div>
+      <div class="nav-item" id="navSaved" onclick="switchTab('saved')">Saved (<span id="savedCount">0</span>)</div>
+      <div class="nav-item" id="navAdd" onclick="switchTab('add')">+ Add Room</div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:5000";
+    const OWNER_PIN = "1234";
+
+    let rooms = [];
+    let activeOwnerKey = "";
+    let currentTab = "home";
+    let tempVideoUrl = "";
+
+    function canManage(room) {
+      if (!activeOwnerKey) return false;
+      return Boolean(room.ownerKey && room.ownerKey === activeOwnerKey) || (room.id > 4);
+    }
+
+    function toggleOwnerMode() {
+      if (!activeOwnerKey) {
+        const pin = prompt("Owner PIN (1234):");
+        if (pin !== OWNER_PIN) return alert("Galat PIN!");
+        const key = prompt("Apni Owner Secret Key enter karein:");
+        if (!key || !key.trim()) return alert("Secret Key zaroori hai.");
+        activeOwnerKey = key.trim();
+      } else {
+        activeOwnerKey = "";
+      }
+      updateOwnerBtn();
+      renderCurrentTab();
+    }
+
+    function updateOwnerBtn() {
+      const btn = document.getElementById("ownerToggleBtn");
+      btn.innerText = activeOwnerKey ? "Owner ON (Exit)" : "Owner: OFF";
+      btn.classList.toggle("active", Boolean(activeOwnerKey));
+    }
+
+    function updateSavedCount(allRooms = rooms) {
+      document.getElementById("savedCount").innerText = allRooms.filter(r => r.savedByOwner).length;
+    }
+
+    async function fetchRooms(location = "", maxRent = 999999) {
+      try {
+        const params = new URLSearchParams({ location, max_rent: String(maxRent) });
+        const res = await fetch(`${API_BASE}/api/rooms?${params.toString()}`);
+        if (!res.ok) throw new Error("API error");
+        return await res.json();
+      } catch (err) {
+        alert("Backend server (http://127.0.0.1:5000) se connect nahi ho pa raha. Check karein ki app.py chal raha hai.");
+        return [];
+      }
+    }
+
+    async function refreshAllRoomsCount() {
+      const all = await fetchRooms("", 999999);
+      updateSavedCount(all);
+    }
+
+    function previewSelectedVideo() {
+      const file = document.getElementById("roomVideo").files[0];
+      const preview = document.getElementById("videoPreview");
+      if (tempVideoUrl) URL.revokeObjectURL(tempVideoUrl);
+      if (file) {
+        tempVideoUrl = URL.createObjectURL(file);
+        preview.src = tempVideoUrl;
+        preview.style.display = "block";
+      } else {
+        tempVideoUrl = "";
+        preview.src = "";
+        preview.style.display = "none";
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById("navHome").classList.toggle("active", tab === "home");
+      document.getElementById("navSaved").classList.toggle("active", tab === "saved");
+      document.getElementById("navAdd").classList.toggle("active", tab === "add");
+      document.getElementById("mainHeader").style.display = tab === "add" ? "none" : "block";
+      document.getElementById("filterBar").style.display = tab === "home" ? "flex" : "none";
+      document.getElementById("savedTitle").style.display = tab === "saved" ? "block" : "none";
+      document.getElementById("roomList").style.display = tab === "add" ? "none" : "flex";
+      document.getElementById("addRoomSection").style.display = tab === "add" ? "block" : "none";
+      renderCurrentTab();
+    }
+
+    async function renderCurrentTab() {
+      if (currentTab === "home") {
+        await filterRooms();
+      } else if (currentTab === "saved") {
+        const all = await fetchRooms("", 999999);
+        updateSavedCount(all);
+        renderRooms(all.filter(r => r.savedByOwner), "Koi saved room nahi hai.");
+      }
+    }
+
+    async function toggleSave(id) {
+      const res = await fetch(`${API_BASE}/api/rooms/${id}/save`, { method: "PATCH" });
+      if (!res.ok) return alert("Save status update nahi ho paya.");
+      await refreshAllRoomsCount();
+      await renderCurrentTab();
+    }
+
+    function startEditRoom(id) {
+      const room = rooms.find(r => r.id === id);
+      if (!room) return;
+      if (!activeOwnerKey) {
+        return alert("Pehle Owner mode ON karke apni Secret Key enter karein.");
+      }
+      document.getElementById("editRoomId").value = room.id;
+      document.getElementById("roomTitle").value = room.title;
+      document.getElementById("roomCategory").value = room.category;
+      document.getElementById("roomLocation").value = room.location;
+      document.getElementById("roomRent").value = room.rent;
+      document.getElementById("roomAmenities").value = (room.amenities || []).join(", ");
+      document.getElementById("roomOwner").value = room.owner;
+      document.getElementById("secretKeyGroup").style.display = "none";
+      document.getElementById("formHeading").innerText = "Edit Room";
+      document.getElementById("submitBtn").innerText = "Update Room";
+      switchTab("add");
+    }
+
+    async function deleteRoom(id) {
+      const room = rooms.find(r => r.id === id);
+      if (!room) return;
+      if (!activeOwnerKey) {
+        return alert("Pehle Owner mode ON karke apni Secret Key enter karein.");
+      }
+      if (!confirm(`"${room.title}" delete karein?`)) return;
+
+      const res = await fetch(`${API_BASE}/api/rooms/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner_key: activeOwnerKey })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return alert(data.error || "Delete nahi ho paya.");
+      }
+      alert(data.message || "Room delete ho gaya.");
+      await refreshAllRoomsCount();
+      await renderCurrentTab();
+    }
+
+    async function saveRoomForm(e) {
+      e.preventDefault();
+      const editId = document.getElementById("editRoomId").value;
+      const formData = new FormData();
+      formData.append("title", document.getElementById("roomTitle").value.trim());
+      formData.append("category", document.getElementById("roomCategory").value);
+      formData.append("location", document.getElementById("roomLocation").value.trim());
+      formData.append("rent", document.getElementById("roomRent").value);
+      formData.append("amenities", document.getElementById("roomAmenities").value.trim());
+      formData.append("owner", document.getElementById("roomOwner").value.trim());
+
+      const videoFile = document.getElementById("roomVideo").files[0];
+      if (videoFile) {
+        formData.append("video", videoFile);
+      }
+
+      if (editId) {
+        formData.append("owner_key", activeOwnerKey);
+        const res = await fetch(`${API_BASE}/api/rooms/${editId}`, {
+          method: "PUT",
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          return alert(data.error || "Update nahi ho paya.");
+        }
+        alert("Room update ho gaya!");
+      } else {
+        const enteredKey = document.getElementById("ownerSecretKey").value.trim();
+        formData.append("owner_key", enteredKey);
+        const res = await fetch(`${API_BASE}/api/rooms`, {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          return alert(data.error || "Room save nahi ho paya.");
+        }
+        activeOwnerKey = data.ownerKey;
+        updateOwnerBtn();
+        if (!enteredKey) {
+          alert("Aapki Secret Key: " + data.ownerKey);
+        } else {
+          alert("Room save ho gaya!");
+        }
+      }
+
+      document.getElementById("editRoomId").value = "";
+      document.getElementById("secretKeyGroup").style.display = "block";
+      document.getElementById("formHeading").innerText = "Add New Room";
+      document.getElementById("submitBtn").innerText = "Save Room";
+      document.getElementById("addRoomForm").reset();
+      document.getElementById("videoPreview").style.display = "none";
+      await refreshAllRoomsCount();
+      switchTab("home");
+    }
+
+    async function filterRooms() {
+      const q = document.getElementById("searchInput").value.trim();
+      const maxRent = parseInt(document.getElementById("budgetSelect").value, 10);
+      const filtered = await fetchRooms(q, maxRent);
+      document.getElementById("resultCount").innerText = `Showing ${filtered.length} room(s)`;
+      renderRooms(filtered, "No rooms found.");
+    }
+
+    function renderRooms(data, emptyMsg) {
+      rooms = Array.isArray(data) ? data : [];
+      const list = document.getElementById("roomList");
+      if (!rooms.length) {
+        list.innerHTML = `<p style="text-align:center;color:#64748b;margin-top:20px;">${emptyMsg}</p>`;
+        return;
+      }
+      list.innerHTML = rooms.map(room => `
+        <div class="room-card">
+          <div class="room-top">
+            <div class="room-title">${room.title}</div>
+            <span class="badge">${room.category}</span>
+          </div>
+          <div class="room-loc">📍 ${room.location}</div>
+          ${room.videoUrl ? `<video class="room-video" src="${room.videoUrl}" controls playsinline></video>` : ""}
+          <div class="amenities">${(room.amenities || []).map(a => `<span class="amenity">${a}</span>`).join("")}</div>
+          <div class="room-bottom">
+            <div class="price">₹${room.rent} <span>/ month</span></div>
+            <div class="card-actions">
+              <button class="save-btn ${room.savedByOwner ? "saved" : ""}" onclick="toggleSave(${room.id})">${room.savedByOwner ? "Saved" : "Save"}</button>
+              ${activeOwnerKey ? `<button class="edit-btn" onclick="startEditRoom(${room.id})">Edit</button>` : ""}
+              ${activeOwnerKey ? `<button class="delete-btn" onclick="deleteRoom(${room.id})">Delete</button>` : ""}
+              <button class="contact-btn" onclick="alert('Owner: ${room.owner}')">Contact</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    updateOwnerBtn();
+    refreshAllRoomsCount();
+    filterRooms();
+  </script>
+</body>
+</html>
