@@ -134,7 +134,7 @@
   </div>
 
   <script>
-    const API_BASE = "http://127.0.0.1:5000";
+    const API_BASE = window.location.origin; // Assuming backend is served from the same origin
     const OWNER_PIN = "1234";
 
     let rooms = [];
@@ -178,7 +178,7 @@
         if (!res.ok) throw new Error("API error");
         return await res.json();
       } catch (err) {
-        alert("Backend server (http://127.0.0.1:5000) se connect nahi ho pa raha. Check karein ki app.py chal raha hai.");
+        alert("Backend server se connect nahi ho pa raha. Check karein ki app.py chal raha hai.");
         return [];
       }
     }
